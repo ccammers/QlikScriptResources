@@ -1,0 +1,126 @@
+Loading the Calendar Procedure;
+/***************************************************************************************************************
+Scripts to include in data models
+
+
+***************************************************************************************************************/
+
+Sub CreateFieldCalendar(subDateField,subSourceTable,subReferenceDate,subHolidayListParam)
+/*******************************************************************
+This procedure will create a calendar table based on a date field.
+
+Parameters:
+
+Name			Data Type		notes
+subDateField		string		the name of a date field that will be 
+					used as the basis for the calender 
+					table. This will also be used to 
+					qualify the field names
+
+subSourceTable		string		The name of the table  where the date 
+					field can be found. this is only used 
+					to validate that the field exists if 
+					the field occurs on more than one table 
+					just pick one. the procedure will use 
+					the entire contents of the field to 
+					determine the range of dates.
+
+subReferenceDate 	Date		This date is used to determine what 
+					"today" is. It is unsed to calculate
+					fields that provide a comparison the
+					current date like relative months and
+					years. If the parameter is not 
+					provided the procedure will use the
+					Today() function.
+
+subHolidayListVariable pass a reference to a variable that contains the 
+                       list of holidays that are relevant to the Calendar
+                       This list is used in the Working Days calculation
+                       and so you need not limit yourself to "holidays"
+                       rather any day you want to ignore in the working day
+                       calculation.
+
+Author			Date		Description
+Chris Cammers Solve	10/16/2018	Created
+*******************************************************************/
+
+   //Check the parameters
+   If FieldNumber(subDateField,subSourceTable) = 0 then
+      Trace Field $(subDateField) does not exists, cannot create calendar;
+      Exit Sub;
+   End if
+   //Do I have a holiday List?
+   let subHolidayList = subHolidayListParam;
+   If Len(Trim(subHolidayList))=0 then
+      Let subHolidayList = ',' & subHolidayListParam;
+   End if
+   
+   Trace build the calendar;
+   
+   DateRange:
+   Load 
+      Min(FieldValue('$(subDateField)', RecNo())) + 0 as [CreateFieldCalendar.MinDate],
+      Max(FieldValue('$(subDateField)',RecNo())) + 0 as [CreateFieldCalendar.MaxDate]
+   Autogenerate FieldValueCount('$(subDateField)');
+   
+   Let subMinDate = FieldValue('CreateFieldCalendar.MinDate',1);
+   let subMaxDate = FieldValue('CreateFieldCalendar.MaxDate',1);
+   
+   Drop Table DateRange;
+   
+   If isnull(subReferenceDate) then
+      Let subReferenceDate = Num(Today());
+   Else
+      Let subReferenceDate = Floor(Num(subReferenceDate));
+   end if
+
+   [$(subDateField) Calendar]:
+   Load
+      //Generic date parts
+      TheDate as [$(subDateField)],
+	  Year(TheDate) as [$(subDateField) Year],
+      Dual('Q' & ceil(Month(TheDate)/3),ceil(Month(TheDate)/3)) as [$(subDateField) Quarter],
+      Month(TheDate) as [$(subDateField) Month],
+      Week(TheDate) as  [$(subDateField) Week],
+      Day(TheDate) as [$(subDateField) Day of Month],
+      WeekDay(TheDate) as [$(subDateField) Day of Week],
+      //Boolean is current 
+      -(Year(TheDate) = Year(ReferenceDate)) as [$(subDateField) Is Current Year],
+      //relative date counters
+      //The fields created here will count from zero which is determined by the reference date
+      Year(TheDate) - Year(ReferenceDate) as [$(subDateField) Relative Year],
+      ((Year(TheDate) * 4) + (ceil(Month(TheDate)/3))) - ((Year(ReferenceDate) * 4) + (ceil(Month(ReferenceDate)/3))) as [$(subDateField) Relative Quarter],
+      ((Year(TheDate) * 12) + Month(TheDate))-((Year(ReferenceDate) * 12) + Month(ReferenceDate)) as [$(subDateField) Relative Month],
+      (Weekstart(TheDate) - WeekStart(ReferenceDate))/7 as [$(subDateField) Relative Week],
+      //Datepart Begin and end date pairs
+      Date(Floor(YearStart(TheDate))) as [$(subDateField) Year Begin Date],
+      Date(Floor(YearEnd(TheDate))) as [$(subDateField) Year End Date],
+      
+      Date(Floor(QuarterStart(TheDate))) as [$(subDateField) Quarter Begin Date],
+      Date(Floor(QuarterEnd(TheDate))) as [$(subDateField) Quarter End Date],
+      
+      
+      Date(Floor(MonthStart(TheDate))) as [$(subDateField) Month Begin Date],
+      Date(Floor(MonthEnd(TheDate))) as [$(subDateField) Month End Date],
+      
+      Date(Floor(WeekStart(TheDate))) as [$(subDateField) Week Begin Date],
+      Date(Floor(WeekEnd(TheDate))) as [$(subDateField) Week End Date],
+      
+      NetWorkDays(TheDate,TheDate,$(subHolidayList)) as [$(subDateField) Is Working Day],
+      
+      -InYearToDate(TheDate,ReferenceDate,Year(TheDate) - Year(ReferenceDate)) as [$(subDateField) YTD Flag],
+      -InQuarterToDate(TheDate,ReferenceDate,((Year(TheDate) * 4) + ceil(Month(TheDate)/3)) - ((Year(ReferenceDate) * 4) + ceil(Month(ReferenceDate)/3))) as [$(subDateField) QTD Flag],
+      -InMonthToDate(TheDate,ReferenceDate,((Year(TheDate) * 12) + Month(TheDate))-((Year(ReferenceDate) * 12) + Month(ReferenceDate))) as [$(subDateField) MTD Flag],
+      -InWeekToDate(TheDate,WeekStart(TheDate) + WeekDay(ReferenceDate)-1,0) as [$(subDateField) WTD Flag]
+      
+      ;
+   Load 
+      Date(RecNo() + $(subMinDate) - 1) as TheDate,
+      Date($(subReferenceDate)) as ReferenceDate  
+   AutoGenerate $(subMaxDate) - $(subMinDate) + 1;
+   
+   Let subMinDate = Null();
+   Let subMaxDate = Null();
+   Let subReferenceDate = Null();
+
+End Sub
