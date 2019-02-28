@@ -1,0 +1,86 @@
+trace Define Mapping table procedure;
+//**************************************************************************************************
+//MappingTableProcedure.txt
+//
+//Created by: Chris Cammers (Solve)
+//Create Date: 2/28/2019
+//Description
+//	procedure evaluates if a mapping table exists and then creates it
+// Parameters: subTName = a string identifying a mapping table
+//             subMapExists = a place holder parameter, do not pass a value for this parameter
+//
+//Modified			Developer				Description
+//02/28/2019      	Chris Cammers(Solve)  	Inital Creation
+//**************************************************************************************************/
+Sub BuildMappingTable(subTName,subMapExists)
+    Let subMapExists = not isNull(ApplyMap('$(subTName)','XXXXXXXXX','XXXXXXXX'));
+	If subMapExists = true() then
+	   Let subMapExists = Null();
+       exit sub;
+	End if
+    Let subMapExists = Null();
+
+	Switch subTName
+		Case 'PURCHASE_ORDER_STAT'
+			
+			PURCHASE_ORDER_STAT:
+			Mapping
+			Load * inline [
+			PURCHASE_ORDER_STAT_ARG, PURCHASE_ORDER_STAT_DESC
+			C, Complete
+			F, Filled
+			O, Ordered
+			P, Planned
+			];
+		
+        case 'WLPrefixMap'
+        
+        	WLPrefixMap:
+			Mapping
+			Load WLPrefix, Dual(PrefixDesc,Order) as PrefixDesc inline [
+			WLPrefix,PrefixDesc,Order
+			W,Won,1
+			L,Loss,2
+			A,Abandoned,3
+			P,Pending,4
+			U,Undefined,5
+			];
+		
+        case 'MapYesNo'
+	       MapYesNo:
+		   Mapping
+		   Load
+		   	Num(Arg) as Arg,
+		   	MapYesNo;
+		   Load * Inline [
+				Arg, MapYesNo
+				1, Yes
+				0, No
+				];
+		case 'MapJobType'
+		       MapJobType:
+			   Mapping
+			   Load
+				   JobType,
+				   MapNewRepeat;
+			   Load * Inline [
+				   JobType,MapNewRepeat
+				   'FIRST RUN','NEW'
+				   'FR R&D','NEW'
+				   'R&D', 'NEW'
+				   'REPEAT','REPEAT'
+				   'REWORK','REPEAT'
+				   'RUSH','REPEAT'
+				   'SAMPLES','REPEAT'
+				   'SERVICE','REPEAT'
+				   'SPARES','REPEAT'
+				   'WARRANTY','REPEAT'
+			   ];
+		DEFAULT
+		   Trace Mapping Table not defined: $(subTName);
+	 End switch
+
+
+
+
+End sub
