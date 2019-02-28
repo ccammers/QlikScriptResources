@@ -1,0 +1,72 @@
+Trace Begin Qlik Sense Script Paths Include File;
+//**************************************************************************************************
+//ScriptPaths.txt
+//
+//Created by: Chris Cammers (Solve)
+//Create Date: 2/3/2012
+//Description
+//	Script paths contain paths needed to connect to common file locations accross the network
+//
+//Modified	Developer			Description
+//12/2/2015	Bryan Herold	        Altered Paths to move SharePoint to local drive
+//01/2/2018       Chris Cammers(Solve)    Added procedure to centralize database connection information.
+//06/14/2018      Chris Cammers(Solve)	Moving Sharepoint directories
+//06/26/2018      Chris Cammers(Solve)	Converting for use with Qlik Sense libraries. Removing obsolete code
+//02/28/2019      Chris Cammers(Solve)  Adding to Qlik data warehousing samples, making generic
+//**************************************************************************************************/
+//The variable vDataLib is set in the load script prior to the call for this script file
+
+Let envServerDir =  'lib://$(vDataLib)/';
+Let envIsDev = wildMatch('$(vDataLib)','*Development*');
+
+Let envData = '$(ENV_QV_SERVER)' & 'Data\';
+
+
+Let envExternalData = '$(ENV_QV_DATA)' & 'External Data\';
+Let envTransformedData = '$(ENV_QV_DATA)' & 'Transformed\';
+Let envLoadScripts = '$(ENV_QV_DATA)' & 'Load Scripts\';
+Let envRawData = '$(ENV_QV_DATA)' & 'Raw\';
+
+
+/*Global Procedures
+
+*/
+
+sub ConnectDatabase(subServer,subDefaultCatalog,subUserName,subPassword)
+    //user name and password are no longer needed because they are stored as part of the library definition.
+
+    If len(Trim('$(subServer)'))>0 then
+      Lib Connect to '$(subServer)';
+      If len(Trim('$(subDefaultCatalog)'))>0 then
+         sql use [$(subDefaultCatalog)];
+      end if
+    end if	
+   //let subServer = Null();
+   //let subDefaultCatalog = Null();
+   //Let subUserName = Null();
+   //Let subPassword = Null();
+end Sub
+
+
+Sub ExecuteEDXTrigger(subTaskName,subIsDev)
+
+   switch subIsDev
+      case 1 //Development
+         switch subTaskName
+            case 'Productivity'
+               Execute D:\QlikRepositoryShare\Software\QMSEDX\QMSEDX_CommandLine\qmsedx.exe -task="DevelopmentApplications/Productivity/Productivity.qvw" -qms=http://wbc-qv-01.wbc.local:4799/qms/service -password=RunThisThing;
+            case 'SalesToolkit'
+               Execute D:\QlikRepositoryShare\Software\QMSEDX\QMSEDX_CommandLine\qmsedx.exe -task="Development Data Models/Sales Tool Kit Data Model.qvw" -qms=http://wbc-qv-01.wbc.local:4799/qms/service -password=RunThisThing;
+         end switch
+      case 0
+         switch subTaskName
+            case 'Productivity'
+               Execute D:\QlikRepositoryShare\Software\QMSEDX\QMSEDX_CommandLine\qmsedx.exe -task="Productivity/Productivity.qvw" -qms=http://wbc-qv-01.wbc.local:4799/qms/service -password=RunThisThing;
+            case 'SalesToolkit'
+               Execute D:\QlikRepositoryShare\Software\QMSEDX\QMSEDX_CommandLine\qmsedx.exe -task="Production Data Models/Sales Tool Kit Data Model.qvw" -qms=http://wbc-qv-01.wbc.local:4799/qms/service -password=RunThisThing;
+         end switch
+   End switch
+
+
+
+End sub
