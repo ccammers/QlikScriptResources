@@ -8,10 +8,6 @@ Trace Begin Qlik Sense Script Paths Include File;
 //	Script paths contain paths needed to connect to common file locations accross the network
 //
 //Modified	Developer			Description
-//12/2/2015	Bryan Herold	        Altered Paths to move SharePoint to local drive
-//01/2/2018       Chris Cammers(Solve)    Added procedure to centralize database connection information.
-//06/14/2018      Chris Cammers(Solve)	Moving Sharepoint directories
-//06/26/2018      Chris Cammers(Solve)	Converting for use with Qlik Sense libraries. Removing obsolete code
 //02/28/2019      Chris Cammers(Solve)  Adding to Qlik data warehousing samples, making generic
 //**************************************************************************************************/
 //The variable vDataLib is set in the load script prior to the call for this script file
@@ -19,13 +15,13 @@ Trace Begin Qlik Sense Script Paths Include File;
 Let envServerDir =  'lib://$(vDataLib)/';
 Let envIsDev = wildMatch('$(vDataLib)','*Development*');
 
-Let envData = '$(ENV_QV_SERVER)' & 'Data\';
+Let envData = '$(envServerDir)' & 'Data\';
 
 
-Let envExternalData = '$(ENV_QV_DATA)' & 'External Data\';
-Let envTransformedData = '$(ENV_QV_DATA)' & 'Transformed\';
-Let envLoadScripts = '$(ENV_QV_DATA)' & 'Load Scripts\';
-Let envRawData = '$(ENV_QV_DATA)' & 'Raw\';
+Let envExternalData = '$(envData)' & 'External Data\';
+Let envTransformedData = '$(envData)' & 'Transformed\';
+Let envLoadScripts = '$(envData)' & 'Load Scripts\';
+Let envRawData = '$(envData)' & 'Raw\';
 
 
 /*Global Procedures
