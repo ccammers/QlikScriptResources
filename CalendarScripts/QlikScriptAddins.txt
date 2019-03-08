@@ -1,4 +1,4 @@
-Loading the Calendar Procedure;
+Trace Loading the Calendar Procedure;
 /***************************************************************************************************************
 Scripts to include in data models
 
