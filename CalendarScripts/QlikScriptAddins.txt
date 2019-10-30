@@ -84,6 +84,7 @@ Chris Cammers Solve	10/16/2018	Created
       Week(TheDate) as  [$(subDateField) Week],
       Day(TheDate) as [$(subDateField) Day of Month],
       WeekDay(TheDate) as [$(subDateField) Day of Week],
+	  Text(Date(TheDate,'DD-MMM')) as [$(subDateField) Day Name],
       //Boolean is current 
       -(Year(TheDate) = Year(ReferenceDate)) as [$(subDateField) Is Current Year],
       //relative date counters
