@@ -112,7 +112,7 @@ Chris Cammers Solve	10/16/2018	Created
       -InYearToDate(TheDate,ReferenceDate,Year(TheDate) - Year(ReferenceDate)) as [$(subDateField) YTD Flag],
       -InQuarterToDate(TheDate,ReferenceDate,((Year(TheDate) * 4) + ceil(Month(TheDate)/3)) - ((Year(ReferenceDate) * 4) + ceil(Month(ReferenceDate)/3))) as [$(subDateField) QTD Flag],
       -InMonthToDate(TheDate,ReferenceDate,((Year(TheDate) * 12) + Month(TheDate))-((Year(ReferenceDate) * 12) + Month(ReferenceDate))) as [$(subDateField) MTD Flag],
-      -InWeekToDate(TheDate,WeekStart(TheDate) + WeekDay(ReferenceDate)-1,0) as [$(subDateField) WTD Flag]
+      -InWeekToDate(TheDate,WeekStart(TheDate) + WeekDay(ReferenceDate)-1,0) as [$(subDateField) WTD Flag],
       -inyeartodate(TheDate,If(Year(TheDate) = Year(ReferenceDate),ReferenceDate,TheDate),0)  as [$(subDateField) CY YTD Flag],
       -inyeartodate(TheDate,If(Year(TheDate) = (Year(ReferenceDate) - 1),AddYears(ReferenceDate,-1),TheDate),0)  as [$(subDateField) PY YTD Flag]
       ;
