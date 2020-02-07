@@ -1,0 +1,146 @@
+/***************************************************************************************************************
+Extract Example for SQL Server
+***************************************************************************************************************/
+
+
+/*******************************************************************
+This script extracts tables from a sql server database based on a table list. It will perform minor intra-table 
+transformations such as concatenating fields, preserving leading zeros in numeric strings and formatting datetime fields.
+
+Dependencies:
+
+Tables.txt	This file is a list of tables which will be extracted from a database.
+Columns:
+	DatabaseName	The name of the database within the server
+	
+	Schema			the schema name where the table is found, most commonly "dbo"
+	
+	TableName		The name of the table to be extracted
+	
+	FriendlyName	The friendly name will be used as the name for the saved qvd.
+
+ColumnExpressions.txt	this file will provide expressions in qlik syntax to make minor transformations when extracting the data
+Columns:
+	Schema			The schema for the table where the field is found
+	
+	Table			The table where the field is found
+	
+	Column			The name of the database column that will be substituted
+	
+	Expression		The expression to substitute in the extraction of the field.
+
+
+Author					Date		Description
+Chris Cammers Solve		2/7/2020	Created
+*******************************************************************/
+//set the name of the library where the tables are found
+let vLibraryName = 'MySqlServerName';
+Let vExternalDataDir = 'lib://Qlikwarehouse/Data/ExternalData/';
+Let vExtractDataDir = 'lib://Qlikwarehouse/Data/ExtractData/';
+
+//create a mapping table of the expressions to substitute int he extract
+ColumnExpressions:
+Mapping
+LOAD
+    Schema & '.' & "Table" & '.' & Column as ColumnExpressions_ARG,
+    Concat(Distinct Expression,', ') as ColumnExpressions_DESC
+FROM [$(vExternalDataDir)ColumnExpressions.txt]
+(txt, codepage is 28592, embedded labels, delimiter is ',', msq)
+Group by Schema, "Table", Column;
+
+//
+LIB CONNECT TO '$(vLibraryName)';
+
+TableList:
+LOAD
+    RowNo() as RecordNumber,
+    DatabaseName,
+    Schema,
+    "TableName",
+    FriendlyName
+FROM [$(vExternalDataDir)Tables.txt]
+(txt, codepage is 28591, embedded labels, delimiter is ',', msq);
+
+
+
+//How many tables are there
+Let vTableCount = FieldValueCount('RecordNumber');
+
+//Loop over the list of tables
+for i=1 to $(vTableCount)
+
+   Let vRec = FieldValue('RecordNumber',$(i));
+   Let vTableName = lookup('TableName','RecordNumber','$(vRec)','TableList');
+   Let vSchema =  lookup('Schema','RecordNumber','$(vRec)','TableList');
+   Let vDatabaseName = lookup('DatabaseName','RecordNumber','$(vRec)','TableList');
+   Let vFriendlyName = lookup('FriendlyName','RecordNumber','$(vRec)','TableList');
+   
+   //this command changes the "current database" from the default for the library
+   //this insures we are pulling the system catalog  for the correct database.
+   SQL use [$(vDatabaseName)];
+   
+   //get the database columns from the database
+   //the LoadList field contains Qlik Syntax to be used in the preceeding load statement
+   //the SelectList field contains sql syntax to be used in the select statement
+   LoadList:
+   Load
+      table_name,
+      schema_name,
+      schema_name & '.' & table_name as FullTableName,
+      table_type,
+      concat(ApplyMap('ColumnExpressions',schema_name & '.' & table_name & '.' & column_name,'[' & column_name & ']'),', ',column_id) as LoadList, 
+      concat('[' & column_name & ']',', ',column_id) as SelectList
+   group by table_name, schema_name, table_type;
+   SQL SELECT
+      C.TABLE_NAME AS table_name,
+      C.TABLE_SCHEMA AS schema_name,
+      C.COLUMN_NAME AS column_name,
+      C.ORDINAL_POSITION AS column_id,
+      T.TABLE_TYPE as table_type
+   FROM
+      INFORMATION_SCHEMA.COLUMNS AS C
+      Left Join INFORMATION_SCHEMA.TABLES T on C.TABLE_CATALOG = T.TABLE_CATALOG and C.TABLE_SCHEMA = T.TABLE_SCHEMA and c.TABLE_NAME=T.TABLE_NAME
+   WHERE
+      C.TABLE_NAME = '$(vTableName)' and C.TABLE_SCHEMA = '$(vSchema)' and C.Table_Catalog = '$(vDatabaseName)'
+   ORDER BY
+   C.ORDINAL_POSITION;
+
+
+
+   //Get the expression to build the Primary key for the table
+   PrimaryKey:
+   Load
+	  concat('[' & ColumnName & ']', ' & ''-'' & ',column_id) &  ' as PrimaryKey' as PkExpr
+   Group by TableName;
+   SQL SELECT
+          i.name AS IndexName,
+          OBJECT_NAME(ic.OBJECT_ID) AS TableName,
+          COL_NAME(ic.OBJECT_ID,ic.column_id) AS ColumnName,
+          ic.column_id
+	   FROM
+          sys.indexes AS i 
+          INNER JOIN sys.index_columns AS ic ON  i.OBJECT_ID = ic.OBJECT_ID AND i.index_id = ic.index_id
+	   WHERE   i.is_primary_key = 1 and OBJECT_NAME(ic.OBJECT_ID) = '$(vTableName)';
+
+   //save the table expressions into variables to be used to load the table
+   Let vFullTableName = FieldValue('FullTableName',1);
+   Let vLoadList = FieldValue('LoadList',1);
+   Let vSelectList = FieldValue('SelectList',1);
+   Let vPrimaryKey = If(Len(Trim(FieldValue('PkExpr',1)))=0,'',FieldValue('PkExpr',1) & ',');
+   
+   Drop tables LoadList, PrimaryKey;
+   
+   [$(vFriendlyName)]:
+   Load
+      $(vPrimaryKey)
+      $(vLoadList);
+   SQL Select $(vSelectList)
+       From $(vFullTableName);
+       
+   Store [$(vFriendlyName)] into [$(vExtractDataDir)$(vFriendlyName).qvd](qvd);
+   Drop Table [$(vFriendlyName)];
+   
+   
+Next i
+
+
