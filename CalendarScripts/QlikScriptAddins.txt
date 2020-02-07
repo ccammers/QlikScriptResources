@@ -51,8 +51,10 @@ Chris Cammers Solve	10/16/2018	Created
    End if
    //Do I have a holiday List?
    let subHolidayList = subHolidayListParam;
-   If Len(Trim(subHolidayList))=0 then
+   If Len(Trim(subHolidayList))>0 then
       Let subHolidayList = ',' & subHolidayListParam;
+   Else
+      let subHolidayList = '';
    End if
    
    Trace build the calendar;
