@@ -1,0 +1,89 @@
+Let varExtract = 'lib://Extract/';
+Let varDBLib  = 'SQL2016';
+
+LIB CONNECT TO '$(varDBLib)';
+
+TableList:
+Load * Inline [
+TableTitle, DatabaseName, Schema, Table, WhereClause
+DimAccount, AdventureworksDW2016, dbo, DimAccount
+DimEmployee, AdventureworksDW2016, dbo, DimEmployee
+DimProduct, AdventureworksDW2016, dbo, DimProduct
+FactInternetSales, AdventureworksDW2016, dbo, FactInternetSales
+];
+
+//Here, we'll go and load all the tables we want, then drop them to QVD files.
+
+Let NumTables = FieldValueCount('TableTitle');
+
+Let ErrorList = '';
+
+
+
+For i=1 to $(NumTables)
+    LET StartTime = now();
+
+    Let TableTitle = FieldValue('TableTitle',$(i));
+    Let DatabaseName = Lookup('DatabaseName','TableTitle','$(TableTitle)','TableList');
+    Let Schema = Lookup('Schema','TableTitle','$(TableTitle)','TableList');
+    Let Table = Lookup('Table','TableTitle','$(TableTitle)','TableList');
+    Let WhereClause = Lookup('WhereClause','TableTitle','$(TableTitle)','TableList');
+
+    Trace Getting $(Table) ($(i) of $(NumTables));
+
+    //start do loop
+    Set a=1;
+    Set ErrorMode=0;
+    Do
+       //soft fail logic
+       Set ScriptErrorCount=0;
+
+          [$(TableTitle)]:
+          Select * From $(DatabaseName).$(Schema).$(Table) $(WhereClause);
+
+       //sleep if fails and try again
+       If ScriptErrorCount >=1 then
+          Sleep 10000;
+       End If;
+
+       //loop counter
+       Let a=a+1;
+    Loop Until (ScriptErrorCount=0) or a>=4;
+              //until conditions met
+
+    Store * From [$(TableTitle)] into [$(varExtract)$(TableTitle).qvd] (qvd);
+
+    Drop Table [$(TableTitle)];
+
+    If ScriptErrorCount>0 and a>4 then
+       Let ErrorList=ErrorList&' | Failed to load $(Table)';
+    End If;
+
+    Set ErrorMode=1;
+
+    Let StopTime = Now();
+
+    if isnull(TableNumber('TableList_Log')) then
+       Let vTableStatement = '[TableList_Log]:';
+    Else
+       Let vTableStatement = 'Concatenate([TableList_Log])';
+    End if
+
+      $(vTableStatement)
+      Load
+         '$(DatabaseName)' as DatabaseName,
+         '$(TableTitle)' as TableName,
+         '$(Schema)' as Schema,
+         '$(Table)' as Table,
+         '$(WhereClause)' as WhereClause,
+         $(i) as Load_Order,
+         '$(StartTime)' as Load_StartTime,
+         '$(StopTime)' as Load_StopTime
+      AutoGenerate 1;
+
+
+
+
+Next i;
+
+drop table TableList;
