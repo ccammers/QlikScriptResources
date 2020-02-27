@@ -1,0 +1,21 @@
+//Ignore the selections in a table using this parameterized variable
+
+set saIgnoreTableSelections = Concat({<$Table = {$1}>}'[' & $Field & '] =',', ');
+
+/* usage 
+
+	Sum({<$(=$(saIgnoreTableSelections('Departments')))>} Sales)
+
+*/
+
+/*Obey selections for a table
+
+*/
+
+Set saObeyTableSelections = Concat({<$Table = {$1}>}'['& $Field & '] = $::[' & $Field &']',', ');
+
+/*
+Usage
+   Sum({1<$(=$(saObeyTableSelections('Departments')))>} Sales)
+   
+*/
