@@ -19,8 +19,8 @@
         <param name="port" value="587" />
         <param name="EnableSsl" value="true" />
         <param name="Authentication" value="Basic" />
-        <param name="username" value="POLYWOOD" />
-        <param name="password" value="cLnezcFXRF_I-pp6tamf-w" /> <!-- for office 365 if multi-factor authentication is in use you will need to get an app password-->
+        <param name="username" value="UserID" />
+        <param name="password" value="Password" /> <!-- for office 365 if multi-factor authentication is in use you will need to get an app password-->
         <param name="bufferSize" value="0" /> <!-- Set this to 0 to make sure an email is sent on every error -->
         <param name="lossy" value="true" />
         <layout type="log4net.Layout.PatternLayout">
