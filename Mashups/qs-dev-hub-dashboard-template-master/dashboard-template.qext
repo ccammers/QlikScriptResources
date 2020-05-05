@@ -1,0 +1,13 @@
+{
+	"type": "mashup-template",
+	"name": "DAR template",
+	"description": "DAR template for mashups",
+	"homepage" : "",
+	"author": "Francis Kabinoff & Arturo Munoz",
+    "version" : "1.0.0",
+    "preview" : "preview.png",
+    "keywords" : "qlik-sense, mashup, dashboard",
+	"license" : "",
+	"repository" : "",
+    "dependencies" : { "qlik-sense" : ">=1.0.x" }
+}

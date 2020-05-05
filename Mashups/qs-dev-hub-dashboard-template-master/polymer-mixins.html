@@ -1,0 +1,72 @@
+<dom-module id="polymer-mixins">
+    <template>
+        <style>
+            paper-toolbar {
+                --paper-toolbar-height: 65px;
+                --paper-toolbar-background: #3949AB;
+                --paper-toolbar-color: #fff;
+            }
+            paper-toolbar ::shadow .toolbar-tools {
+                padding: 0 6px;
+            }
+            paper-toolbar ::shadow .toolbar-tools > .title {
+                margin-left: 0;
+            }
+            paper-toolbar img {
+                height: 24px;
+            }
+            paper-drawer-panel {
+                --paper-drawer-panel-main-container: {
+                    overflow: auto;
+                };
+            }
+            paper-drawer-panel {
+                --paper-drawer-panel-scrim: {
+                    z-index: 10003;
+                };
+            }
+            paper-drawer-panel {
+                --paper-drawer-panel-left-drawer-container: {
+                    z-index: 10001;
+                    margin-top: 1px;
+                    background: #fff;
+                    box-shadow: 0 2px 4px rgba(0,0,0,.08);
+                };
+
+            }
+            @media (max-width: 767px) {
+                     paper-drawer-panel {
+                        --paper-drawer-panel-left-drawer-container: {
+                        z-index: 10005;
+                        box-shadow: 0 2px 4px rgba(0,0,0,.08);
+
+                        };
+                    }
+                }
+            paper-drawer-panel {
+                --paper-drawer-panel-right-drawer-container: {
+                    z-index: 10004;
+                };
+            }
+            paper-menu {
+                --paper-menu: {
+                    padding: 0;
+                };
+            }
+            paper-menu {
+                --paper-menu-background-color: #888;
+                --paper-menu-color: #ccc;
+            }
+            paper-menu {
+                --paper-menu-selected-item: {
+                    color: #eee;
+                };
+            }
+            paper-body {
+                --paper-body: {
+                    background-color: #F3F4F5;
+                }
+            }
+        </style>
+    </template>
+</dom-module>
